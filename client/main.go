@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -9,7 +10,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
-var mySigningKey = []byte("abasdcasdcebebe")
+var mySigningKey = []byte("TopSecretKey")
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	validToken, err := GenerateJWT()
@@ -17,7 +18,20 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, err.Error())
 	}
 
-	fmt.Fprintf(w, validToken)
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", "http://localhost:9000", nil)
+	req.Header.Set("Token", validToken)
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Fprintf(w, "Erorr: %s", err.Error())
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+	}
+
+	fmt.Fprintf(w, string(body))
 }
 
 func GenerateJWT() (string, error) {
